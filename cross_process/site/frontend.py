@@ -11,17 +11,22 @@ from flask_nav.elements import Navbar, View, Subgroup, Link, Text, Separator
 from markupsafe import escape
 
 from .forms import SignupForm
+from .forms import LoginForm
 from .nav import nav
+from ..database.dbmodel import *
+
+
 
 frontend = Blueprint('frontend', __name__)
-
 # We're adding a navbar as well through flask-navbar. In our example, the
 # navbar has an usual amount of Link-Elements, more commonly you will have a
 # lot more View instances.
 nav.register_element('frontend_top', Navbar(
     View('Flask-Bootstrap', '.index'),
     View('Home', '.index'),
-    View('Forms Example', '.example_form'),
+    View('Login', '.login'),
+    View('Sign up', '.signup'),
+
     Subgroup(
         'Docs',
         Link('Flask-Bootstrap', 'http://pythonhosted.org/Flask-Bootstrap'),
@@ -35,7 +40,30 @@ nav.register_element('frontend_top', Navbar(
         Link('Customize', 'http://getbootstrap.com/customize/'), ),
     Text('Using Flask-Bootstrap {}'.format(FLASK_BOOTSTRAP_VERSION)), ))
 
+@frontend.route("/signup", methods = ["GET", "POST"])
+def signup():
+    form =SignupForm()
 
+    if form.validate_on_submit():
+        asession = db_session_maker()
+        new_user = Users(username=form.username.data,
+                        email=form.email.data,
+                        sup_dist='s',
+                        password=form.username.data)
+        asession.add(new_user)
+        asession.commit()
+
+        return '<h1>' + form.username.data + ' ' + form.password.data + ' added to DB</h1>'
+
+    return render_template('signup.html', form=form)
+
+
+@frontend.route("/login", methods = ["GET", "POST"])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        return '<h1>' + form.username.data + ' ' + form.password.data + '</h1>'
+    return render_template('login.html', form=form)
 # Our index-page just shows a quick explanation. Check out the template
 # "templates/index.html" documentation for more details.
 @frontend.route('/')
